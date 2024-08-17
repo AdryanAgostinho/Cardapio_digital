@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápio Digital - Fast Food</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+        }
+        h1 {
+            text-align: center;
+            color: #ff6600;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .category {
+            margin-bottom: 30px;
+        }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .item label {
+            flex-grow: 1;
+        }
+        .cart {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+        }
+        .cart h2 {
+            margin-top: 0;
+        }
+        .total {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .finalizar-pedido {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .finalizar-pedido input, .finalizar-pedido select {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px;
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #e55d00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cardápio Digital</h1>
+        <hr>
+        <!-- Apresentação do Cardápio -->
+        <div class="category">
+            <h2>Hambúrgueres</h2>
+            <div class="item">
+                <label>
+                    <input type="checkbox" class="item-checkbox" data-name="Cheeseburger" data-price="12.00">
+                    Cheeseburger - R$12,00
+                </label>
+                <input type="number" class="item-quantity" min="1" value="1" disabled>
+            </div>
+            <div class="item">
+                <label>
+                    <input type="checkbox" class="item-checkbox" data-name="Bacon Burger" data-price="15.00">
+                    Bacon Burger - R$15,00
+                </label>
+                <input type="number" class="item-quantity" min="1" value="1" disabled>
+            </div>
+        </div>
+
+        <div class="category">
+            <h2>Salgados</h2>
+            <div class="item">
+                <label>
+                    <input type="checkbox" class="item-checkbox" data-name="Coxinha" data-price="7.00">
+                    Coxinha - R$7,00
+                </label>
+                <input type="number" class="item-quantity" min="1" value="1" disabled>
+            </div>
+            <div class="item">
+                <label>
+                    <input type="checkbox" class="item-checkbox" data-name="Empada" data-price="6.50">
+                    Empada - R$6,50
+                </label>
+                <input type="number" class="item-quantity" min="1" value="1" disabled>
+            </div>
+        </div>
+
+        <div class="category">
+            <h2>Bebidas</h2>
+            <div class="item">
+                <label>
+                    <input type="checkbox" class="item-checkbox" data-name="Refrigerante" data-price="5.00">
+                    Refrigerante - R$5,00
+                </label>
+                <input type="number" class="item-quantity" min="1" value="1" disabled>
+            </div>
+            <div class="item">
+                <label>
+                    <input type="checkbox" class="item-checkbox" data-name="Suco Natural" data-price="8.00">
+                    Suco Natural - R$8,00
+                </label>
+                <input type="number" class="item-quantity" min="1" value="1" disabled>
+            </div>
+        </div>
+
+        <!-- Carrinho de Compras -->
+        <div class="cart">
+            <h2>Carrinho de Compras</h2>
+            <ul id="cart-items"></ul>
+            <p class="total">Total: R$<span id="total-value">0.00</span></p>
+            <button onclick="finalizarPedido()">Finalizar Pedido</button>
+        </div>
+
+        <!-- Finalização do Pedido -->
+        <div class="finalizar-pedido" id="checkout-form" style="display: none;">
+            <h2>Finalização do Pedido</h2>
+            <select id="payment-method">
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
+                <option value="Pix">Pix</option>
+            </select>
+            <input type="text" id="nome" placeholder="Nome Completo" required>
+            <input type="text" id="endereco" placeholder="Endereço para Entrega" required>
+            <button onclick="confirmarPedido()">Confirmar Pedido</button>
+            <button onclick="cancelarPedido()">Cancelar Pedido</button>
+        </div>
+    </div>
+
+    <script>
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        const cartItems = document.getElementById('cart-items');
+        const totalValue = document.getElementById('total-value');
+        let total = 0;
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const quantityInput = this.parentNode.nextElementSibling;
+                if (this.checked) {
+                    quantityInput.disabled = false;
+                    addItemToCart(this.dataset.name, this.dataset.price, quantityInput.value);
+                    updateTotal();
+                } else {
+                    quantityInput.disabled = true;
+                    removeItemFromCart(this.dataset.name);
+                    updateTotal();
+                }
+            });
+        });
+
+        function addItemToCart(name, price, quantity) {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${name} x${quantity} - R$${(price * quantity).toFixed(2)}`;
+            listItem.dataset.name = name;
+            cartItems.appendChild(listItem);
+        }
+
+        function removeItemFromCart(name) {
+            const items = cartItems.querySelectorAll('li');
+            items.forEach(item => {
+                if (item.dataset.name === name) {
+                    cartItems.removeChild(item);
+                }
+            });
+        }
+
+        function updateTotal() {
+            total = 0;
+            const items = cartItems.querySelectorAll('li');
+            items.forEach(item => {
+                const itemText = item.textContent.split(' - R$');
+                total += parseFloat(itemText[1]);
+            });
+            totalValue.textContent = total.toFixed(2);
+        }
+
+        function finalizarPedido() {
+            if (total.toFixed(2) > 0) {
+                //alert(`Pedido confirmado!\nNome: ${nome}\nEndereço: ${endereco}\nPagamento: ${pagamento}\nTotal: R$${total.toFixed(2)}`);
+                document.getElementById('checkout-form').style.display = 'block';
+            }else{
+                alert(`Selecione 1 item para prossegior com o pedido`);
+              
+            }
+            
+        }
+
+        function confirmarPedido() {
+            const nome = document.getElementById('nome').value;
+            const endereco = document.getElementById('endereco').value;
+            const pagamento = document.getElementById('payment-method').value;
+
+            if (nome && endereco) {
+                alert(`Pedido confirmado!\nNome: ${nome}\nEndereço: ${endereco}\nPagamento: ${pagamento}\nTotal: R$${total.toFixed(2)}`);
+                // Aqui você pode enviar o pedido para o servidor, se necessário
+            } else {
+                alert('Por favor, preencha todos os campos.');
+            }
+        }
+
+        function cancelarPedido() {
+            document.getElementById('checkout-form').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
